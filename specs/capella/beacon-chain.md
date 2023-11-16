@@ -63,7 +63,8 @@
     - [`SignedDilithiumToExecutionChange`](#signeddilithiumtoexecutionchanges)
 - [Helper functions](#helper-functions)
   - [Beacon state accessors](#beacon-state-accessors)
-    - [`get_indexed_attestation`](#get_indexed_attestation)
+    - [`ConvertToIndexed`](#converttoindexed)
+    - [`AttestingIndices`](#attestingindices)
 
 ## Introduction
 
@@ -519,8 +520,16 @@ class Attestation(Container):
     aggregation_bits: Bitlist[MAX_VALIDATORS_PER_COMMITTEE] # A bitfield representation of validator indices that have voted exactly the same vote
     // the same vote
     data: AttestationData
+    signaturesIdxToValidatorIdx: List[uint64, MAX_VALIDATORS_PER_COMMITTEE]
+    signatures: List[DilithiumSignature, MAX_VALIDATORS_PER_COMMITTEE] # List size will be the number of validator indices that have voted exactly the same vote.]
+```
+
+```python
+class AttestationV2(Container):
+    aggregation_bits: Bitlist[MAX_VALIDATORS_PER_COMMITTEE] # A bitfield representation of validator indices that have voted exactly the same vote
+    // the same vote
+    data: AttestationData
     signatures: List[DilithiumSignature, MAX_VALIDATORS_PER_COMMITTEE] # List size will be the number of validator indices that have voted exactly the same vote.
-    map_val_idx_to_sig_idx: List[uint64, MAX_VALIDATORS_PER_COMMITTEE]
 ```
 
 #### `Deposit`
@@ -691,7 +700,7 @@ class SignedDilithiumToExecutionChange(Container):
 
 ### Beacon state accessors
 
-#### `get_indexed_attestation`
+#### `ConvertToIndexed`
 
 ```python
 def get_indexed_attestation(attestation: Attestation, committee Sequence[ValidatorIndex]) -> IndexedAttestation:
@@ -707,16 +716,19 @@ def get_indexed_attestation(attestation: Attestation, committee Sequence[Validat
     )
 ```
 
-#### `get_attesting_indices`
+#### `AttestingIndices`
 
-```python
-def get_attesting_indices(state: BeaconState,
-                          data: AttestationData,
-                          bits: Bitlist[MAX_VALIDATORS_PER_COMMITTEE]) -> Set[ValidatorIndex]:
-    """
-    Return the set of attesting indices corresponding to ``data`` and ``bits``.
-    """
-    committee = get_beacon_committee(state, data.slot, data.index)
-    return set(index for i, index in enumerate(committee) if bits[i])
-
+```golang
+func AttestingIndices(bf bitfield.Bitfield, committee []primitives.ValidatorIndex) ([]uint64, error) {
+	if bf.Len() != uint64(len(committee)) {
+		return nil, fmt.Errorf("bitfield length %d is not equal to committee length %d", bf.Len(), len(committee))
+	}
+	indices := make([]uint64, 0, bf.Count())
+	for _, idx := range bf.BitIndices() {
+		if idx < len(committee) {
+			indices = append(indices, uint64(committee[idx]))
+		}
+	}
+	return indices, nil
+}
 ```
