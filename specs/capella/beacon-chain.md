@@ -362,7 +362,8 @@ class AttestationData(Container):
 class IndexedAttestation(Container):
     attesting_indices: List[ValidatorIndex, MAX_VALIDATORS_PER_COMMITTEE]
     data: AttestationData
-    signature: DilithiumSignature
+    signatures: List[DilithiumSignature, MAX_VALIDATORS_PER_COMMITTEE] # List size will be the number of validator indices that have voted exactly the same vote.
+    map_val_idx_to_sig_idx: List[uint64, MAX_VALIDATORS_PER_COMMITTEE]
 ```
 
 #### `PendingAttestation`
