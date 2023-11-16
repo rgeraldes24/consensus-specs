@@ -11,7 +11,6 @@
 - [Preset](#preset)
   - [Max operations per block](#max-operations-per-block)
   - [Execution](#execution)
-  - [Updated penalty values](#updated-penalty-values)
   - [Sync committee](#sync-committee)
   - [Withdrawals processing](#withdrawals-processing)
   - [Misc](#misc-1)
