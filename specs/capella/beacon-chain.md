@@ -61,6 +61,9 @@
     - [`SignedBeaconBlock`](#signedbeaconblock)
     - [`SignedBeaconBlockHeader`](#signedbeaconblockheader)
     - [`SignedDilithiumToExecutionChange`](#signeddilithiumtoexecutionchanges)
+- [Helper functions](#helper-functions)
+  - [Beacon state accessors](#beacon-state-accessors)
+    - [`get_indexed_attestation`](#get_indexed_attestation)
 
 ## Introduction
 
@@ -362,7 +365,6 @@ class IndexedAttestation(Container):
     attesting_indices: List[ValidatorIndex, MAX_VALIDATORS_PER_COMMITTEE]
     data: AttestationData
     signatures: List[DilithiumSignature, MAX_VALIDATORS_PER_COMMITTEE] # List size will be the number of validator indices that have voted exactly the same vote.
-    map_val_idx_to_sig_idx: List[uint64, MAX_VALIDATORS_PER_COMMITTEE]
 ```
 
 #### `PendingAttestation`
@@ -683,4 +685,38 @@ class SignedBeaconBlockHeader(Container):
 class SignedDilithiumToExecutionChange(Container):
     message: DilithiumToExecutionChange
     signature: DilithiumSignature
+```
+
+## Helper functions
+
+### Beacon state accessors
+
+#### `get_indexed_attestation`
+
+```python
+def get_indexed_attestation(attestation: Attestation, committee Sequence[ValidatorIndex]) -> IndexedAttestation:
+    """
+    Return the indexed attestation corresponding to ``attestation``.
+    """
+    attesting_indices = get_attesting_indices(state, attestation.data, attestation.aggregation_bits)
+
+    return IndexedAttestation(
+        attesting_indices=sorted(attesting_indices),
+        data=attestation.data,
+        signature=attestation.signature,
+    )
+```
+
+#### `get_attesting_indices`
+
+```python
+def get_attesting_indices(state: BeaconState,
+                          data: AttestationData,
+                          bits: Bitlist[MAX_VALIDATORS_PER_COMMITTEE]) -> Set[ValidatorIndex]:
+    """
+    Return the set of attesting indices corresponding to ``data`` and ``bits``.
+    """
+    committee = get_beacon_committee(state, data.slot, data.index)
+    return set(index for i, index in enumerate(committee) if bits[i])
+
 ```
