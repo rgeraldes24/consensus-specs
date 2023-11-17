@@ -65,6 +65,10 @@
   - [Beacon state accessors](#beacon-state-accessors)
     - [`ConvertToIndexed`](#converttoindexed)
     - [`AttestingIndices`](#attestingindices)
+    - [`IsValidAttestationIndices`](#isvalidattestationindices)
+    - [`VerifyIndexedAttestationSigs`](#verifyindexedattestationsigs)
+
+    
 
 ## Introduction
 
@@ -702,6 +706,9 @@ class SignedDilithiumToExecutionChange(Container):
 
 #### `ConvertToIndexed`
 
+*Note*: original spec def: ```get_indexed_attestation``.
+
+
 ```golang
 func ConvertToIndexed(ctx context.Context, attestation *zondpb.Attestation, committee []primitives.ValidatorIndex) (*zondpb.IndexedAttestation, error) {
 	if bf := attestation.AggregationBits; bf.Len() != uint64(len(committee)) {
@@ -714,16 +721,17 @@ func ConvertToIndexed(ctx context.Context, attestation *zondpb.Attestation, comm
 	}
 	sort.Sort(sortByValidatorIdx(sigSlices))
 
-	inAtt := &zondpb.IndexedAttestation{
+	return &zondpb.IndexedAttestation{
 		Data:             attestation.Data,
 		Signatures:       sigSlices.signatures,
 		AttestingIndices: sigSlices.signaturesIdxToValidatorIdx,
-	}
-	return inAtt, nil
+	}, nil
 }
 ```
 
 #### `AttestingIndices`
+
+*Note*: original spec def: ```get_attesting_indices``.
 
 ```golang
 func AttestingIndices(bf bitfield.Bitfield, committee []primitives.ValidatorIndex) ([]uint64, error) {
@@ -737,5 +745,64 @@ func AttestingIndices(bf bitfield.Bitfield, committee []primitives.ValidatorInde
 		}
 	}
 	return indices, nil
+}
+```
+
+#### `IsValidAttestationIndices`
+
+*Note*: original spec def: ```is_valid_indexed_attestation``; performs the first part of the
+indexed attestation validation of the original spec.
+
+```golang
+func IsValidAttestationIndices(ctx context.Context, indexedAttestation *zondpb.IndexedAttestation) error {
+	ctx, span := trace.StartSpan(ctx, "attestationutil.IsValidAttestationIndices")
+	defer span.End()
+
+	if indexedAttestation == nil || indexedAttestation.Data == nil || indexedAttestation.Data.Target == nil || indexedAttestation.AttestingIndices == nil {
+		return errors.New("nil or missing indexed attestation data")
+	}
+	indices := indexedAttestation.AttestingIndices
+	if len(indices) == 0 {
+		return errors.New("expected non-empty attesting indices")
+	}
+	if uint64(len(indices)) > params.BeaconConfig().MaxValidatorsPerCommittee {
+		return fmt.Errorf("validator indices count exceeds MAX_VALIDATORS_PER_COMMITTEE, %d > %d", len(indices), params.BeaconConfig().MaxValidatorsPerCommittee)
+	}
+	for i := 1; i < len(indices); i++ {
+		if indices[i-1] >= indices[i] {
+			return errors.New("attesting indices is not uniquely sorted")
+		}
+	}
+	return nil
+}
+```
+
+#### `VerifyIndexedAttestationSigs`
+
+*Note*: original spec def: ```is_valid_indexed_attestation``; performs the last part of the
+indexed attestation validation(signatures verification) of the original spec.
+
+```golang
+func VerifyIndexedAttestationSigs(ctx context.Context, indexedAtt *zondpb.IndexedAttestation, pubKeys []dilithium.PublicKey, domain []byte) error {
+	ctx, span := trace.StartSpan(ctx, "attestationutil.VerifyIndexedAttestationSig")
+	defer span.End()
+
+	messageHash, err := signing.ComputeSigningRoot(indexedAtt.Data, domain)
+	if err != nil {
+		return errors.Wrap(err, "could not get signing root of object")
+	}
+
+	for i, rawSig := range indexedAtt.Signatures {
+		sig, err := dilithium.SignatureFromBytes(rawSig)
+		if err != nil {
+			return errors.Wrap(err, "could not convert bytes to signature")
+		}
+
+		if !sig.Verify(pubKeys[i], messageHash[:]) {
+			return signing.ErrSigFailedToVerify
+		}
+	}
+
+	return nil
 }
 ```
