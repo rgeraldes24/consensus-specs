@@ -706,7 +706,7 @@ class SignedDilithiumToExecutionChange(Container):
 
 #### `ConvertToIndexed`
 
-*Note*: original spec def: ```get_indexed_attestation``.
+*Note*: original spec def: ```get_indexed_attestation```.
 
 
 ```golang
@@ -731,7 +731,7 @@ func ConvertToIndexed(ctx context.Context, attestation *zondpb.Attestation, comm
 
 #### `AttestingIndices`
 
-*Note*: original spec def: ```get_attesting_indices``.
+*Note*: original spec def: ```get_attesting_indices```.
 
 ```golang
 func AttestingIndices(bf bitfield.Bitfield, committee []primitives.ValidatorIndex) ([]uint64, error) {
@@ -750,7 +750,7 @@ func AttestingIndices(bf bitfield.Bitfield, committee []primitives.ValidatorInde
 
 #### `IsValidAttestationIndices`
 
-*Note*: original spec def: ```is_valid_indexed_attestation``; performs the first part of the
+*Note*: original spec def: ```is_valid_indexed_attestation```; performs the first part of the
 indexed attestation validation of the original spec.
 
 ```golang
@@ -779,7 +779,7 @@ func IsValidAttestationIndices(ctx context.Context, indexedAttestation *zondpb.I
 
 #### `VerifyIndexedAttestationSigs`
 
-*Note*: original spec def: ```is_valid_indexed_attestation``; performs the last part of the
+*Note*: original spec def: ```is_valid_indexed_attestation```; performs the last part of the
 indexed attestation validation(signatures verification) of the original spec.
 
 ```golang
