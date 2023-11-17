@@ -702,18 +702,25 @@ class SignedDilithiumToExecutionChange(Container):
 
 #### `ConvertToIndexed`
 
-```python
-def get_indexed_attestation(attestation: Attestation, committee Sequence[ValidatorIndex]) -> IndexedAttestation:
-    """
-    Return the indexed attestation corresponding to ``attestation``.
-    """
-    attesting_indices = get_attesting_indices(state, attestation.data, attestation.aggregation_bits)
+```golang
+func ConvertToIndexed(ctx context.Context, attestation *zondpb.Attestation, committee []primitives.ValidatorIndex) (*zondpb.IndexedAttestation, error) {
+	if bf := attestation.AggregationBits; bf.Len() != uint64(len(committee)) {
+		return nil, fmt.Errorf("bitfield length %d is not equal to committee length %d", bf.Len(), len(committee))
+	}
 
-    return IndexedAttestation(
-        attesting_indices=sorted(attesting_indices),
-        data=attestation.data,
-        signature=attestation.signature,
-    )
+	sigSlices := signatureSlices{
+		signaturesIdxToValidatorIdx: attestation.SignaturesIdxToValidatorIdx,
+		signatures:                  attestation.Signatures,
+	}
+	sort.Sort(sortByValidatorIdx(sigSlices))
+
+	inAtt := &zondpb.IndexedAttestation{
+		Data:             attestation.Data,
+		Signatures:       sigSlices.signatures,
+		AttestingIndices: sigSlices.signaturesIdxToValidatorIdx,
+	}
+	return inAtt, nil
+}
 ```
 
 #### `AttestingIndices`
