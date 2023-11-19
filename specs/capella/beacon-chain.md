@@ -67,6 +67,8 @@
     - [`AttestingIndices`](#attestingindices)
     - [`IsValidAttestationIndices`](#isvalidattestationindices)
     - [`VerifyIndexedAttestationSigs`](#verifyindexedattestationsigs)
+  - [Predicates](#predicates)
+    - [`IsSlashableAttestationData`](#isslashableattestationdata)
 
     
 
@@ -374,9 +376,9 @@ class IndexedAttestation(Container):
 
 #### `PendingAttestation`
 
-```python
-class PendingAttestation(Container):
-    aggregation_bits: Bitlist[MAX_VALIDATORS_PER_COMMITTEE]
+```python 
+class PendingAttestation(Container): # TODO(rgeraldes24) - not sure if needed; double check
+    participation_bits: Bitlist[MAX_VALIDATORS_PER_COMMITTEE]
     data: AttestationData
     inclusion_delay: Slot
     proposer_index: ValidatorIndex
@@ -521,19 +523,11 @@ class ProposerSlashing(Container):
 
 ```python
 class Attestation(Container):
-    aggregation_bits: Bitlist[MAX_VALIDATORS_PER_COMMITTEE] # A bitfield representation of validator indices that have voted exactly the same vote
+    participation_bits: Bitlist[MAX_VALIDATORS_PER_COMMITTEE] # A bitfield representation of validator indices that have voted exactly the same vote
     // the same vote
     data: AttestationData
-    signaturesIdxToValidatorIdx: List[uint64, MAX_VALIDATORS_PER_COMMITTEE]
+    signaturesIdxToValidatorIdx: List[uint64, MAX_VALIDATORS_PER_COMMITTEE] # TODO(rgeraldes24) - review name and functionality - signaturesIdxToParticipationIdx might suit better
     signatures: List[DilithiumSignature, MAX_VALIDATORS_PER_COMMITTEE] # List size will be the number of validator indices that have voted exactly the same vote.]
-```
-
-```python
-class AttestationV2(Container):
-    aggregation_bits: Bitlist[MAX_VALIDATORS_PER_COMMITTEE] # A bitfield representation of validator indices that have voted exactly the same vote
-    // the same vote
-    data: AttestationData
-    signatures: List[DilithiumSignature, MAX_VALIDATORS_PER_COMMITTEE] # List size will be the number of validator indices that have voted exactly the same vote.
 ```
 
 #### `Deposit`
@@ -804,5 +798,25 @@ func VerifyIndexedAttestationSigs(ctx context.Context, indexedAtt *zondpb.Indexe
 	}
 
 	return nil
+}
+```
+
+### Predicates
+
+#### `IsSlashableAttestationData`
+
+*Note*: original spec def: ```is_slashable_attestation_data```.
+
+```golang
+func IsSlashableAttestationData(data1, data2 *zondpb.AttestationData) bool {
+	if data1 == nil || data2 == nil || data1.Target == nil || data2.Target == nil || data1.Source == nil || data2.Source == nil {
+		return false
+	}
+	isDoubleVote := !attestation.AttDataIsEqual(data1, data2) && data1.Target.Epoch == data2.Target.Epoch
+	att1 := &zondpb.IndexedAttestation{Data: data1}
+	att2 := &zondpb.IndexedAttestation{Data: data2}
+	// Check if att1 is surrounding att2.
+	isSurroundVote := slashings.IsSurround(att1, att2)
+	return isDoubleVote || isSurroundVote
 }
 ```
