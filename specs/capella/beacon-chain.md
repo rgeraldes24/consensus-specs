@@ -526,8 +526,8 @@ class Attestation(Container):
     participation_bits: Bitlist[MAX_VALIDATORS_PER_COMMITTEE] # A bitfield representation of validator indices that have voted exactly the same vote
     // the same vote
     data: AttestationData
-    signaturesIdxToValidatorIdx: List[uint64, MAX_VALIDATORS_PER_COMMITTEE] # TODO(rgeraldes24) - review name and functionality - signaturesIdxToParticipationIdx might suit better
     signatures: List[DilithiumSignature, MAX_VALIDATORS_PER_COMMITTEE] # List size will be the number of validator indices that have voted exactly the same vote.]
+    signaturesIdxToParticipationIdx: List[DilithiumSignature, MAX_VALIDATORS_PER_COMMITTEE]
 ```
 
 #### `Deposit`
