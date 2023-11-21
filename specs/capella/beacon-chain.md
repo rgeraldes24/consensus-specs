@@ -48,8 +48,6 @@
     - [`Attestation`](#attestation)
     - [`Deposit`](#deposit)
     - [`VoluntaryExit`](#voluntaryexit)
-    - [`SyncAggregate`](#syncaggregate)
-    - [`SyncCommittee`](#synccommittee)
     - [`DilithiumToExecutionChange`](#dilithiumtoexecutionchange)
   - [Beacon blocks](#beacon-blocks)
     - [`BeaconBlockBody`](#beaconblockbody)
@@ -61,6 +59,9 @@
     - [`SignedBeaconBlock`](#signedbeaconblock)
     - [`SignedBeaconBlockHeader`](#signedbeaconblockheader)
     - [`SignedDilithiumToExecutionChange`](#signeddilithiumtoexecutionchanges)
+  - [Light clients](#light-clients)
+    - [`SyncAggregate`](#syncaggregate)
+    - [`SyncCommittee`](#synccommittee)
 - [Helper functions](#helper-functions)
   - [Beacon state accessors](#beacon-state-accessors)
     - [`ConvertToIndexed`](#converttoindexed)
@@ -69,6 +70,7 @@
     - [`VerifyIndexedAttestationSigs`](#verifyindexedattestationsigs)
   - [Predicates](#predicates)
     - [`IsSlashableAttestationData`](#isslashableattestationdata)
+    - [`VerifyIndexedAttestation`](#verifyindexedattestation)
 
     
 
@@ -546,21 +548,6 @@ class VoluntaryExit(Container):
     validator_index: ValidatorIndex
 ```
 
-#### `SyncAggregate`
-
-```python
-class SyncAggregate(Container):
-    sync_committee_bits: Bitvector[SYNC_COMMITTEE_SIZE]
-    sync_committee_signatures: List[DilithiumSignature, SYNC_COMMITTEE_SIZE]
-```
-
-#### `SyncCommittee`
-
-```python
-class SyncCommittee(Container):
-    pubkeys: Vector[DilithiumPubkey, SYNC_COMMITTEE_SIZE]
-```
-
 #### `DilithiumToExecutionChange`
 
 ```python
@@ -694,6 +681,25 @@ class SignedDilithiumToExecutionChange(Container):
     signature: DilithiumSignature
 ```
 
+### Light clients
+
+#### `SyncAggregate`
+
+```python
+class SyncAggregate(Container):
+    sync_committee_bits: Bitvector[SYNC_COMMITTEE_SIZE]
+    sync_committee_signatures: List[DilithiumSignature, SYNC_COMMITTEE_SIZE] # TODO MAX_COMMITTEE_SIZE
+```
+
+#### `SyncCommittee`
+
+*Note*: the ```pubkeys``` field contains the pubkeys that are used for the  ```aggregate_pubkey``` field in the original spec. For that reason, we can remove the field with the aggregated pubkeys since its of no use to us(BLS aggregation).
+
+```python
+class SyncCommittee(Container):
+    pubkeys: Vector[DilithiumPubkey, SYNC_COMMITTEE_SIZE]
+```
+
 ## Helper functions
 
 ### Beacon state accessors
@@ -818,5 +824,40 @@ func IsSlashableAttestationData(data1, data2 *zondpb.AttestationData) bool {
 	// Check if att1 is surrounding att2.
 	isSurroundVote := slashings.IsSurround(att1, att2)
 	return isDoubleVote || isSurroundVote
+}
+```
+
+#### `VerifyIndexedAttestation`
+
+*Note*: original spec def: ```is_valid_indexed_attestation```.
+
+```golang
+func VerifyIndexedAttestation(ctx context.Context, beaconState state.ReadOnlyBeaconState, indexedAtt *zondpb.IndexedAttestation) error {
+	ctx, span := trace.StartSpan(ctx, "core.VerifyIndexedAttestation")
+	defer span.End()
+
+	if err := attestation.IsValidAttestationIndices(ctx, indexedAtt); err != nil {
+		return err
+	}
+	domain, err := signing.Domain(
+		beaconState.Fork(),
+		indexedAtt.Data.Target.Epoch,
+		params.BeaconConfig().DomainBeaconAttester,
+		beaconState.GenesisValidatorsRoot(),
+	)
+	if err != nil {
+		return err
+	}
+	indices := indexedAtt.AttestingIndices
+	var pubkeys []dilithium.PublicKey
+	for i := 0; i < len(indices); i++ {
+		pubkeyAtIdx := beaconState.PubkeyAtIndex(primitives.ValidatorIndex(indices[i]))
+		pk, err := dilithium.PublicKeyFromBytes(pubkeyAtIdx[:])
+		if err != nil {
+			return errors.Wrap(err, "could not deserialize validator public key")
+		}
+		pubkeys = append(pubkeys, pk)
+	}
+	return attestation.VerifyIndexedAttestationSigs(ctx, indexedAtt, pubkeys, domain)
 }
 ```
