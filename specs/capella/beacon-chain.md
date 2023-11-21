@@ -68,11 +68,11 @@
     - [`AttestingIndices`](#attestingindices)
     - [`IsValidAttestationIndices`](#isvalidattestationindices)
     - [`VerifyIndexedAttestationSigs`](#verifyindexedattestationsigs)
+    - [`NextSyncCommittee`](#nextsynccommittee)
   - [Predicates](#predicates)
     - [`IsSlashableAttestationData`](#isslashableattestationdata)
     - [`VerifyIndexedAttestation`](#verifyindexedattestation)
-
-    
+  - [Block processing](#block-processing)
 
 ## Introduction
 
@@ -529,7 +529,7 @@ class Attestation(Container):
     // the same vote
     data: AttestationData
     signatures: List[DilithiumSignature, MAX_VALIDATORS_PER_COMMITTEE] # List size will be the number of validator indices that have voted exactly the same vote.]
-    signaturesIdxToParticipationIdx: List[DilithiumSignature, MAX_VALIDATORS_PER_COMMITTEE]
+    signaturesIdxToParticipationIdx: List[uint64, MAX_VALIDATORS_PER_COMMITTEE]
 ```
 
 #### `Deposit`
@@ -689,6 +689,7 @@ class SignedDilithiumToExecutionChange(Container):
 class SyncAggregate(Container):
     sync_committee_bits: Bitvector[SYNC_COMMITTEE_SIZE]
     sync_committee_signatures: List[DilithiumSignature, SYNC_COMMITTEE_SIZE] # TODO MAX_COMMITTEE_SIZE
+    signaturesIdxToCommitteeIdx: List[uint64, SYNC_COMMITTEE_SIZE] # TODO MAX_COMMITTEE_SIZE
 ```
 
 #### `SyncCommittee`
@@ -807,6 +808,27 @@ func VerifyIndexedAttestationSigs(ctx context.Context, indexedAtt *zondpb.Indexe
 }
 ```
 
+#### `NextSyncCommittee`
+
+*Note*: original spec def: ```get_next_sync_committee```
+
+```golang
+func NextSyncCommittee(ctx context.Context, s state.BeaconState) (*zondpb.SyncCommittee, error) {
+	indices, err := NextSyncCommitteeIndices(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	pubkeys := make([][]byte, len(indices))
+	for i, index := range indices {
+		p := s.PubkeyAtIndex(index)
+		pubkeys[i] = p[:]
+	}
+	return &zondpb.SyncCommittee{
+		Pubkeys: pubkeys,
+	}, nil
+}
+```
+
 ### Predicates
 
 #### `IsSlashableAttestationData`
@@ -861,3 +883,6 @@ func VerifyIndexedAttestation(ctx context.Context, beaconState state.ReadOnlyBea
 	return attestation.VerifyIndexedAttestationSigs(ctx, indexedAtt, pubkeys, domain)
 }
 ```
+
+### Block processing
+
