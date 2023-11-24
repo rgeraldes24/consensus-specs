@@ -2,10 +2,6 @@
 
 This document describes the expected actions of a "validator" participating in the Zond proof-of-stake protocol.
 
-## TODO
-
-- SyncCommitteeContribution: add signaturesIdxToValidatorIdx?
-
 ## Table of contents
 
 - [Constants](#constants)
@@ -67,5 +63,4 @@ class SyncCommitteeContribution(Container):
     participation_bits: Bitvector[SYNC_COMMITTEE_SIZE // SYNC_COMMITTEE_SUBNET_COUNT]
     # Signature(s) by the validator(s) over the block root of `slot`
     signatures: List[DilithiumSignature, SYNC_COMMITTEE_SIZE] # TODO(rgeraldes24): list max size vs size
-    signaturesIdxToParticipationIdx: List[DilithiumSignature, SYNC_COMMITTEE_SIZE] # TODO(rgeraldes24): list max size vs size
 ```

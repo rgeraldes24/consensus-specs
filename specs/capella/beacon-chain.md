@@ -529,7 +529,6 @@ class Attestation(Container):
     // the same vote
     data: AttestationData
     signatures: List[DilithiumSignature, MAX_VALIDATORS_PER_COMMITTEE] # List size will be the number of validator indices that have voted exactly the same vote.]
-    signaturesIdxToParticipationIdx: List[uint64, MAX_VALIDATORS_PER_COMMITTEE]
 ```
 
 #### `Deposit`
@@ -689,7 +688,6 @@ class SignedDilithiumToExecutionChange(Container):
 class SyncAggregate(Container):
     sync_committee_bits: Bitvector[SYNC_COMMITTEE_SIZE]
     sync_committee_signatures: List[DilithiumSignature, SYNC_COMMITTEE_SIZE] # TODO MAX_COMMITTEE_SIZE
-    signaturesIdxToCommitteeIdx: List[uint64, SYNC_COMMITTEE_SIZE] # TODO MAX_COMMITTEE_SIZE
 ```
 
 #### `SyncCommittee`
