@@ -6,7 +6,6 @@ PRESET_BASE: 'mainnet'
 # Free-form short name of the network that this configuration applies to - known
 # canonical network names include:
 # * 'mainnet' - there can be only one
-# * 'prater' - testnet
 # Must match the regex: [a-z0-9\-]
 CONFIG_NAME: 'mainnet'
 
@@ -17,7 +16,6 @@ TERMINAL_TOTAL_DIFFICULTY: 58750000000000000000000
 # By default, don't use these params
 TERMINAL_BLOCK_HASH: 0x0000000000000000000000000000000000000000000000000000000000000000
 TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH: 18446744073709551615
-
 
 
 # Genesis
