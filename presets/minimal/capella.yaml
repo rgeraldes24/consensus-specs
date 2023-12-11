@@ -38,8 +38,8 @@ SLOTS_PER_EPOCH: 8
 MIN_SEED_LOOKAHEAD: 1
 # 2**2 (= 4) epochs
 MAX_SEED_LOOKAHEAD: 4
-# [customized] higher frequency new deposits from eth1 for testing
-EPOCHS_PER_ETH1_VOTING_PERIOD: 4
+# [customized] higher frequency new deposits from zond1 for testing
+EPOCHS_PER_ZOND1_VOTING_PERIOD: 4
 # [customized] smaller state
 SLOTS_PER_HISTORICAL_ROOT: 64
 # 2**2 (= 4) epochs
@@ -110,9 +110,9 @@ UPDATE_TIMEOUT: 64
 # 2**30 (= 1,073,741,824)
 MAX_BYTES_PER_TRANSACTION: 1073741824
 # 2**20 (= 1,048,576)
-MAX_TRANSACTIONS_PER_PAYLOAD: 1048576
+# MAX_TRANSACTIONS_PER_PAYLOAD: 1048576
 # 2**8 (= 256)
-BYTES_PER_LOGS_BLOOM: 256
+# BYTES_PER_LOGS_BLOOM: 256
 # 2**5 (= 32)
 MAX_EXTRA_DATA_BYTES: 32
 # [customized] 2**2 (= 4)
