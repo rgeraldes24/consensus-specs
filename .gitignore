@@ -1,0 +1,42 @@
+*.pyc
+/__pycache__
+venv
+.venvs
+.venv
+/.pytest_cache
+*.swp
+
+build/
+output/
+dist/
+
+consensus-spec-tests/
+
+.pytest_cache
+.mypy_cache
+
+# Dynamically built from Markdown spec
+tests/core/pyspec/zond2spec/capella/
+
+
+# coverage reports
+.htmlcov
+.coverage
+.coverage.*
+
+# local CI testing output
+tests/core/pyspec/test-reports
+tests/core/pyspec/zond2spec/test_results.xml
+
+*.egg-info
+
+# TOC tool outputs temporary files
+*.tmp
+
+# docs reader build
+docs/specs
+docs/sync
+docs/ssz
+docs/fork_choice
+docs/README.md
+site
